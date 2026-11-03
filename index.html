@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Piyush Jha · GenAI Architect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ---------- Tokens: golden hour (light) ---------- */
+  :root {
+    --bg: #FFF5EE;
+    --bg-alt: #FFEBDF;
+    --surface: #FFFBF8;
+    --ink: #2B1633;
+    --muted: #6A4E65;
+    --line: rgba(43, 22, 51, 0.14);
+    --accent: #B63A2C;
+    --sun-a: #FFB547;
+    --sun-b: #FF6B3D;
+    --sun-c: #E23D6A;
+    --dusk: #7A3B86;
+    --sky-top: #FFE9D4;
+    --sky-mid: #FFCDB2;
+    --sky-low: #FF9E8C;
+    --ridge-1: #F3A28B;
+    --ridge-2: #DB7486;
+    --nav-bg: rgba(255, 245, 238, 0.82);
+    --chip-bg: rgba(255, 107, 61, 0.1);
+    --cta-a: #D1412D;
+    --cta-b: #B0275A;
+    --shadow: 0 18px 40px -24px rgba(122, 59, 134, 0.45);
+    color-scheme: light;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* ---------- Tokens: after sundown (dark) ---------- */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #170E24; --bg-alt: #1F1330; --surface: #261939; --ink: #FBEBE2; --muted: #C6ABBE;
+      --line: rgba(251, 235, 226, 0.14); --accent: #FF9A6B;
+      --sky-top: #1D1133; --sky-mid: #4A2257; --sky-low: #A8455E;
+      --ridge-1: #6A2F62; --ridge-2: #3F1D4B;
+      --nav-bg: rgba(23, 14, 36, 0.8); --chip-bg: rgba(255, 154, 107, 0.12);
+      --shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.7);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #170E24; --bg-alt: #1F1330; --surface: #261939; --ink: #FBEBE2; --muted: #C6ABBE;
+    --line: rgba(251, 235, 226, 0.14); --accent: #FF9A6B;
+    --sky-top: #1D1133; --sky-mid: #4A2257; --sky-low: #A8455E;
+    --ridge-1: #6A2F62; --ridge-2: #3F1D4B;
+    --nav-bg: rgba(23, 14, 36, 0.8); --chip-bg: rgba(255, 154, 107, 0.12);
+    --shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.7);
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    transition: background-color .4s ease, color .4s ease;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+    z-index: 10; background: var(--nav-bg); backdrop-filter: blur(14px);
+  }
+  img, svg { max-width: 100%; }
+  a { color: inherit; }
+  h1, h2, h3 { font-family: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif; margin: 0; line-height: 1.05; }
+  h2 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 700; letter-spacing: -0.03em; }
+  h3 { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; }
+  p { margin: 0; }
+  :focus-visible { outline: 3px solid var(--sun-b); outline-offset: 3px; border-radius: 6px; }
+  .wrap { width: min(1160px, 100% - 3rem); margin-inline: auto; position: relative; z-index: 2; }
+  .plx { will-change: transform; }
+  .layer { position: absolute; inset: 0; pointer-events: none; }
+  .plx-cell { display: flex; }
+  .plx-cell > * { flex: 1; }
+  .featured-cell { grid-column: span 2; }
+  @media (max-width: 640px) { .featured-cell { grid-column: auto; } }
+
+  /* ---------- Navigation ---------- */
+  .site-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    padding-top: env(safe-area-inset-top, 0px);
+    transition: background-color .3s ease, box-shadow .3s ease;
+  }
+  .site-header.scrolled { background: var(--nav-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 1px 0 var(--line); }
+  .nav { height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .brand {
+    font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 800; font-size: 1.25rem;
+    text-decoration: none; display: flex; align-items: center; gap: .55rem; letter-spacing: -0.02em;
+  }
+  .brand-mark { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(180deg, var(--sun-a), var(--sun-b) 55%, var(--sun-c)); }
+  .nav-links { display: flex; gap: .25rem; list-style: none; margin: 0; padding: 0; }
+  .nav-links a {
+    text-decoration: none; font-weight: 500; font-size: .98rem; padding: .5rem .8rem; border-radius: 999px;
+    color: var(--muted); transition: color .2s, background-color .2s;
+  }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-links a.active { color: var(--ink); background: var(--chip-bg); }
+  .nav-actions { display: flex; align-items: center; gap: .5rem; }
+  .icon-btn {
+    width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface);
+    color: var(--ink); display: grid; place-items: center; cursor: pointer; transition: transform .3s ease;
+  }
+  .icon-btn:hover { transform: rotate(-12deg); }
+  .menu-btn { display: none; }
+  @media (max-width: 860px) {
+    .menu-btn { display: grid; }
+    .nav-links {
+      position: absolute; top: calc(100% - 4px); left: 1rem; right: 1rem; flex-direction: column;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: .6rem;
+      box-shadow: var(--shadow); opacity: 0; transform: translateY(-8px); pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .nav-links.open { opacity: 1; transform: none; pointer-events: auto; }
+    .nav-links a { display: block; padding: .8rem 1rem; font-size: 1.05rem; }
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative; min-height: 100svh; overflow: hidden;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-low) 100%);
+    display: flex; align-items: flex-start;
+    transition: background .4s ease;
+  }
+  .hero-copy { padding-top: clamp(120px, 20vh, 190px); padding-bottom: 42vh; max-width: 760px; }
+  .hello { font-size: 1.15rem; font-weight: 500; color: var(--muted); margin-bottom: 1rem; }
+  .hero h1 {
+    font-size: clamp(2.7rem, 6.6vw, 5.6rem); font-weight: 800; letter-spacing: -0.035em; line-height: .98;
+    max-width: 14ch;
+  }
+  .hero-lede { margin-top: 1.5rem; font-size: clamp(1.05rem, 1.6vw, 1.22rem); max-width: 54ch; color: var(--ink); opacity: .85; }
+  .cta-row { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: .5rem; padding: .85rem 1.4rem; border-radius: 999px;
+    font-weight: 600; font-size: 1rem; text-decoration: none; cursor: pointer; border: 0; font-family: inherit;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .btn-primary { background: linear-gradient(100deg, var(--cta-a), var(--cta-b)); color: #fff; box-shadow: 0 10px 24px -12px var(--cta-b); }
+  .btn-primary:hover { transform: translateY(-2px); }
+  .btn-ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--ink); }
+  .btn-ghost:hover { background: var(--ink); color: var(--bg); }
+  .status { display: inline-flex; align-items: center; gap: .5rem; margin-top: 1.6rem; font-size: .95rem; color: var(--muted); }
+  .status::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #2FB67C; box-shadow: 0 0 0 4px rgba(47, 182, 124, .2); }
+
+  .sun {
+    position: absolute; border-radius: 50%;
+    background: linear-gradient(180deg, var(--sun-a) 0%, var(--sun-b) 55%, var(--sun-c) 100%);
+    -webkit-mask-image: linear-gradient(180deg, #000 0 52%, transparent 52% 56%, #000 56% 64%, transparent 64% 69%, #000 69% 76%, transparent 76% 82%, #000 82% 88%, transparent 88% 95%, #000 95%);
+            mask-image: linear-gradient(180deg, #000 0 52%, transparent 52% 56%, #000 56% 64%, transparent 64% 69%, #000 69% 76%, transparent 76% 82%, #000 82% 88%, transparent 88% 95%, #000 95%);
+  }
+  .hero .sun { width: clamp(240px, 36vw, 520px); aspect-ratio: 1; right: 7%; bottom: 14%; }
+  .sun-glow {
+    position: absolute; width: clamp(420px, 60vw, 900px); aspect-ratio: 1; right: -6%; bottom: -14%;
+    background: radial-gradient(circle, rgba(255, 181, 71, .45), transparent 62%); border-radius: 50%;
+  }
+  .ridge { position: absolute; left: 0; bottom: -2px; width: 100%; height: 40vh; display: block; }
+  .ridge-1 path { fill: var(--ridge-1); }
+  .ridge-2 path { fill: var(--ridge-2); }
+  .ridge-3 path { fill: var(--bg); }
+  .ridge path { transition: fill .4s ease; }
+  @media (max-width: 720px) {
+    .hero .sun { right: 50%; transform: translateX(50%); bottom: 10%; width: 70vw; opacity: .9; }
+    .hero-copy { padding-bottom: 38vh; }
+  }
+
+  /* ---------- Sections ---------- */
+  .section { position: relative; padding: clamp(5rem, 11vw, 8.5rem) 0; overflow: hidden; }
+  .section.alt { background: var(--bg-alt); transition: background-color .4s ease; }
+  .section-head { margin-bottom: clamp(2.2rem, 5vw, 3.5rem); max-width: 640px; }
+  .section-head p { margin-top: 1rem; color: var(--muted); font-size: 1.1rem; }
+
+  .ring { position: absolute; border-radius: 50%; border: 1.5px solid var(--sun-b); opacity: .35; }
+  .orb { position: absolute; border-radius: 50%; filter: blur(4px); }
+  .slices { position: absolute; display: grid; gap: 14px; }
+  .slices span { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--sun-a), var(--sun-c)); opacity: .5; }
+
+  /* About */
+  .about-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: clamp(2rem, 6vw, 5rem); align-items: start; }
+  .about-text p + p { margin-top: 1.1rem; }
+  .about-text p { max-width: 62ch; }
+  .about-text .lead { font-size: 1.3rem; line-height: 1.5; font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 500; }
+  .facts { border: 1px solid var(--line); background: var(--surface); border-radius: 24px; padding: 1.6rem; box-shadow: var(--shadow); }
+  .facts dl { margin: 0; display: grid; gap: 1.1rem; }
+  .facts dt { font-size: .9rem; color: var(--muted); }
+  .facts dd { margin: .15rem 0 0; font-weight: 600; }
+  .facts .years { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-size: 3.2rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em; }
+  @media (max-width: 860px) { .about-grid { grid-template-columns: 1fr; } }
+
+  /* Skills */
+  .skill-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+  .skill-group { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 1.6rem 1.6rem 1.7rem; position: relative; overflow: hidden; }
+  .skill-group::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--stop); }
+  .skill-group p { color: var(--muted); margin: .45rem 0 1.1rem; font-size: .98rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; padding: 0; margin: 0; }
+  .chips li { background: var(--chip-bg); border-radius: 999px; padding: .35rem .8rem; font-size: .92rem; font-weight: 500; }
+  @media (max-width: 760px) { .skill-grid { grid-template-columns: 1fr; } }
+
+  /* Projects */
+  .filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
+  .filter {
+    font-family: inherit; font-size: .98rem; font-weight: 500; padding: .55rem 1.1rem; border-radius: 999px;
+    border: 1.5px solid var(--line); background: transparent; color: var(--ink); cursor: pointer;
+  }
+  .filter[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .project-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+  .project {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 1.6rem;
+    display: flex; flex-direction: column; gap: .8rem; transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .project:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+  .project.featured { grid-column: span 2; background: linear-gradient(140deg, var(--surface) 40%, var(--chip-bg)); }
+  .project.featured h3 { font-size: 1.8rem; }
+  .tag { align-self: flex-start; font-size: .82rem; font-weight: 600; color: var(--accent); }
+  .project p { color: var(--muted); font-size: .98rem; }
+  .project .outcome { color: var(--ink); font-weight: 600; }
+  .project .chips { margin-top: auto; padding-top: .4rem; }
+  .project .chips li { font-size: .82rem; padding: .25rem .65rem; }
+  @media (max-width: 980px) { .project-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .project-grid { grid-template-columns: 1fr; } .project.featured { grid-column: auto; } }
+
+  /* Experience */
+  .timeline { list-style: none; margin: 0; padding: 0; position: relative; }
+  .timeline::before {
+    content: ""; position: absolute; left: 190px; top: 8px; bottom: 8px; width: 3px; border-radius: 3px;
+    background: linear-gradient(180deg, var(--sun-a), var(--sun-b), var(--sun-c), var(--dusk));
+  }
+  .job { display: grid; grid-template-columns: 190px 1fr; padding-bottom: 2.8rem; }
+  .job:last-child { padding-bottom: 0; }
+  .job-years { font-weight: 600; color: var(--muted); padding-top: .15rem; padding-right: 1.5rem; }
+  .job-body { padding-left: 2.2rem; position: relative; }
+  .job-body::before {
+    content: ""; position: absolute; left: -7px; top: .45rem; width: 17px; height: 17px; border-radius: 50%;
+    background: var(--bg-alt); border: 3px solid var(--sun-b);
+  }
+  .job-company { color: var(--accent); font-weight: 600; margin-top: .2rem; }
+  .job ul { margin: .8rem 0 0; padding-left: 1.1rem; max-width: 70ch; }
+  .job li + li { margin-top: .35rem; }
+  .job .chips { margin-top: 1rem; }
+  .job .chips li { font-size: .82rem; padding: .25rem .65rem; }
+  @media (max-width: 720px) {
+    .timeline::before { left: 7px; }
+    .job { grid-template-columns: 1fr; }
+    .job-years { padding-left: 2.2rem; padding-right: 0; }
+  }
+
+  /* Contact */
+  .contact { padding-bottom: clamp(230px, 30vw, 320px); }
+  .contact-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(2rem, 6vw, 5rem); }
+  .contact-links { display: grid; gap: .8rem; margin-top: 2rem; }
+  .contact-links a { font-weight: 600; text-decoration-color: var(--sun-b); text-underline-offset: 5px; text-decoration-thickness: 2px; }
+  form { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: clamp(1.4rem, 3vw, 2rem); display: grid; gap: 1rem; box-shadow: var(--shadow); }
+  label { font-weight: 600; font-size: .95rem; display: grid; gap: .4rem; }
+  input, textarea {
+    font: inherit; color: var(--ink); background: var(--bg); border: 1.5px solid var(--line); border-radius: 12px;
+    padding: .75rem .9rem; width: 100%;
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--sun-b); box-shadow: 0 0 0 4px var(--chip-bg); }
+  textarea { min-height: 140px; resize: vertical; }
+  .form-note { font-size: .92rem; color: var(--muted); }
+  .form-note.ok { color: var(--ink); }
+  .contact .sun { width: clamp(220px, 28vw, 340px); aspect-ratio: 1; left: 50%; bottom: 40px; transform: translateX(-50%); opacity: .95; }
+  .contact .ridge { height: clamp(120px, 16vw, 190px); }
+  .contact .ridge path { fill: var(--bg-alt); }
+  @media (max-width: 860px) { .contact-grid { grid-template-columns: 1fr; } }
+
+  footer { background: var(--bg-alt); padding: 2rem 0 2.4rem; font-size: .95rem; color: var(--muted); transition: background-color .4s ease; }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .plx { transform: none !important; }
+    *, *::before, *::after { transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.7/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+/* ---------- Parallax engine: one rAF loop drives every layer ---------- */
+const layers = new Set();
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+let ticking = false;
+
+function updateLayers() {
+  ticking = false;
+  const vh = window.innerHeight;
+  const vw = window.innerWidth;
+  layers.forEach(({ el, speed, mobileSpeed, mobileBelow, host }) => {
+    const r = host.getBoundingClientRect();
+    if (r.bottom < -vh || r.top > vh * 2) return;
+    if (reduceMotion.matches) { el.style.transform = ""; return; }
+    const offset = r.top + r.height / 2 - vh / 2;
+    const s = mobileSpeed !== null && vw < mobileBelow ? mobileSpeed : speed;
+    el.style.transform = `translate3d(0, ${(offset * s).toFixed(1)}px, 0)`;
+  });
+}
+function requestUpdate() {
+  if (!ticking) { ticking = true; requestAnimationFrame(updateLayers); }
+}
+window.addEventListener("scroll", requestUpdate, { passive: true });
+window.addEventListener("resize", requestUpdate);
+
+/* Positive speed: layer lags behind the scroll. Negative: it sinks as you scroll down. */
+/* mobileSpeed replaces speed below the mobileBelow width, so stacked layouts never overlap. */
+function Parallax({ speed = 0.15, mobileSpeed = null, mobileBelow = 880, className = "", children, style }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    const host = el.closest("section") || el.parentElement;
+    const item = { el, speed, mobileSpeed, mobileBelow, host };
+    layers.add(item);
+    requestUpdate();
+    return () => layers.delete(item);
+  }, [speed, mobileSpeed, mobileBelow]);
+  return <div ref={ref} className={"plx " + className} style={style}>{children}</div>;
+}
+
+/* ---------- Content ---------- */
+const NAV = [
+  { id: "about", label: "About" },
+  { id: "skills", label: "Skills" },
+  { id: "projects", label: "Projects" },
+  { id: "experience", label: "Experience" },
+  { id: "contact", label: "Contact" },
+];
+
+const SKILLS = [
+  {
+    title: "Generative AI",
+    blurb: "AI agents, orchestration and AI-assisted engineering applied to real delivery work.",
+    stop: "var(--sun-a)",
+    items: ["AI Agents", "Agentic workflows", "AI orchestration", "Model Context Protocol (MCP)", "Prompt engineering", "AI-assisted development & testing", "Claude", "ChatGPT", "GitHub Copilot"],
+  },
+  {
+    title: "Architecture",
+    blurb: "Cloud-native systems designed to scale across markets and millions of users.",
+    stop: "var(--sun-b)",
+    items: ["Microservices", "Event-driven architecture", "GraphQL BFF", "Serverless", "Micro frontends", "Cloud-native systems"],
+  },
+  {
+    title: "Frontend",
+    blurb: "Fast, maintainable interfaces for web and mobile.",
+    stop: "var(--sun-c)",
+    items: ["React", "Next.js", "React Native", "TypeScript", "JavaScript", "Material UI", "D3.js"],
+  },
+  {
+    title: "Backend",
+    blurb: "APIs and services built for high traffic and clean contracts.",
+    stop: "var(--dusk)",
+    items: ["Node.js", "NestJS", "GraphQL", "REST APIs", "RabbitMQ"],
+  },
+  {
+    title: "AWS & cloud",
+    blurb: "Serverless and container workloads running on AWS.",
+    stop: "var(--sun-b)",
+    items: ["Lambda", "API Gateway", "ECS", "DynamoDB", "PostgreSQL", "SQS", "SNS", "CloudWatch"],
+  },
+  {
+    title: "DevOps, testing & monitoring",
+    blurb: "Pipelines, tests and observability that keep releases routine.",
+    stop: "var(--sun-a)",
+    items: ["Docker", "Kubernetes", "Jenkins", "GitLab CI", "CircleCI", "Jest", "Cypress", "Datadog"],
+  },
+];
+
+const PROJECTS = [
+  {
+    cat: "genai", title: "Digital ordering for Burger King, Popeyes and Tim Hortons",
+    desc: "Architecture for Restaurant Brands International’s online ordering, payment, loyalty and delivery platforms in the Iberia market, built on GraphQL BFFs, AWS serverless and event-driven microservices.",
+    outcome: "AI-assisted engineering adopted across the delivery teams.",
+    stack: ["React", "NestJS", "GraphQL", "AWS Lambda", "DynamoDB", "SQS / SNS"],
+  },
+  {
+    cat: "genai", title: "Orchestrator-driven agentic engineering",
+    desc: "MCP-enabled workflows in which an orchestrator coordinates AI agents through multi-step engineering tasks: solution design, code reviews, technical documentation and testing.",
+    outcome: "",
+    stack: ["MCP", "AI Agents", "Claude", "ChatGPT", "GitHub Copilot"],
+  },
+  {
+    cat: "fullstack", title: "Kayanee fashion marketplace",
+    desc: "A Saudi Arabia-based lifestyle and fashion e-commerce platform for women, built from scratch on React and NestJS microservices on AWS by a team of 15 I led.",
+    outcome: "1M+ users, 70% faster frontend, 40% faster API responses.",
+    stack: ["React", "TypeScript", "NestJS", "GraphQL", "Kubernetes"],
+  },
+  {
+    cat: "fullstack", title: "Reydix event ticketing",
+    desc: "A German online ticket booking platform with web and mobile apps. I designed and built the Node.js and RabbitMQ backend from scratch.",
+    outcome: "500k+ users, 20% lower infrastructure cost, 99.5% uptime.",
+    stack: ["Node.js", "RabbitMQ", "AWS", "React Native"],
+  },
+  {
+    cat: "fullstack", title: "OpenBank by Santander",
+    desc: "Micro frontend architecture for Santander Group’s online bank, built in React with Atomic Design and shipped through Docker and Kubernetes.",
+    outcome: "2M+ users in five countries, 25% less duplicated code, 30% faster deployments.",
+    stack: ["React", "Micro frontends", "Material UI", "D3.js", "Kubernetes"],
+  },
+  {
+    cat: "fullstack", title: "Discover loan platform",
+    desc: "A loan model system for a US digital bank with 60M+ cardholders, built from scratch with Angular and AWS.",
+    outcome: "50% faster page loads, 95% unit test coverage.",
+    stack: ["Angular", "JavaScript", "AWS", "Jest"],
+  },
+];
+
+const JOBS = [
+  {
+    years: "Mar 2025 – Present", role: "GenAI / Full Stack Solution Architect", company: "EPAM Systems, for Restaurant Brands International",
+    points: [
+      "Architect enterprise-scale online ordering, payment, loyalty and delivery platforms for the Iberia market.",
+      "Champion MCP-enabled agentic workflows and AI orchestration that connect AI agents with engineering activities.",
+      "Drive architecture governance, technical strategy and engineering standards, and mentor teams on AI-assisted development.",
+      "Design and evolve GraphQL BFFs, AWS serverless solutions and event-driven microservices.",
+    ],
+    stack: ["React", "TypeScript", "NestJS", "GraphQL", "AWS Lambda", "DynamoDB", "SQS", "SNS", "Kubernetes"],
+  },
+  {
+    years: "Apr 2022 – Mar 2025", role: "Tech Manager, Full Stack", company: "Globant, on Kayanee",
+    points: [
+      "Led 15 developers building a fashion e-commerce platform for 1M+ users from scratch on React, NestJS and AWS.",
+      "Improved frontend performance by 70% through code splitting, lazy loading and image optimisation.",
+      "Cut deployment times by 35% with Jenkins and GitLab CI/CD, and reached 99% availability on Kubernetes.",
+    ],
+    stack: ["React", "TypeScript", "NestJS", "GraphQL", "AWS", "Kubernetes", "Cypress", "Jest"],
+  },
+  {
+    years: "Aug 2020 – Apr 2022", role: "Architect", company: "Globant, on Reydix",
+    points: [
+      "Designed and built a Node.js, RabbitMQ and AWS backend from scratch for 500k+ users.",
+      "Reduced infrastructure costs by 20% with Docker and Kubernetes while keeping 99.5% uptime.",
+      "Built web and mobile apps in React and React Native, lifting user engagement by 30%.",
+    ],
+    stack: ["Node.js", "RabbitMQ", "AWS", "React", "React Native", "Kubernetes"],
+  },
+  {
+    years: "May 2019 – Aug 2020", role: "Tech Lead", company: "Globant, on OpenBank (Santander Group)",
+    points: [
+      "Architected a React micro frontend with Atomic Design, reducing code duplication by 25%.",
+      "Set up Docker and Kubernetes delivery, cutting deployment times by 30% and raising reliability to 99%.",
+    ],
+    stack: ["React", "Material UI", "D3.js", "Figma", "Kubernetes"],
+  },
+  {
+    years: "Jun 2014 – Sep 2017", role: "Full Stack Developer", company: "Cognizant, on the Discover loan platform",
+    points: [
+      "Built a loan model system from scratch with Angular and AWS for a bank with 60M+ cardholders.",
+      "Reduced page load time by 50% and reached 95% unit test coverage with Jest.",
+    ],
+    stack: ["JavaScript", "Angular", "AWS", "Jest"],
+  },
+  {
+    years: "Mar 2012 – May 2014", role: "Full Stack Developer", company: "Cybage Software, on Merkle Digital",
+    points: [
+      "Developed the front end and back end of a marketing promotion platform used by Fortune 500 companies and 1M+ users.",
+    ],
+    stack: ["JavaScript", "PHP"],
+  },
+];
+
+/* ---------- Hooks ---------- */
+function useTheme() {
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem("portfolio-theme");
+      if (saved === "light" || saved === "dark") return saved;
+    } catch (e) {}
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    try { localStorage.setItem("portfolio-theme", theme); } catch (e) {}
+  }, [theme]);
+  return [theme, () => setTheme(t => (t === "dark" ? "light" : "dark"))];
+}
+
+function useActiveSection(ids) {
+  const [active, setActive] = useState("");
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      entries => entries.forEach(e => e.isIntersecting && setActive(e.target.id)),
+      { rootMargin: "-45% 0px -50% 0px" }
+    );
+    ids.forEach(id => { const el = document.getElementById(id); if (el) obs.observe(el); });
+    return () => obs.disconnect();
+  }, []);
+  return active;
+}
+
+/* ---------- Components ---------- */
+const SunIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4.5" />
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+  </svg>
+);
+const MoonIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />
+  </svg>
+);
+const MenuIcon = ({ open }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+  </svg>
+);
+
+function Header({ theme, toggleTheme }) {
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const active = useActiveSection(NAV.map(n => n.id));
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const onKey = e => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  return (
+    <header className={"site-header" + (scrolled || open ? " scrolled" : "")}>
+      <nav className="wrap nav" aria-label="Main">
+        <a href="#top" className="brand" onClick={() => setOpen(false)}>
+          <span className="brand-mark" aria-hidden="true"></span>Piyush Jha
+        </a>
+        <ul id="nav-links" className={"nav-links" + (open ? " open" : "")}>
+          {NAV.map(n => (
+            <li key={n.id}>
+              <a href={"#" + n.id} className={active === n.id ? "active" : ""} onClick={() => setOpen(false)}>{n.label}</a>
+            </li>
+          ))}
+        </ul>
+        <div className="nav-actions">
+          <button className="icon-btn" onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+          </button>
+          <button className="icon-btn menu-btn" onClick={() => setOpen(o => !o)}
+            aria-expanded={open} aria-controls="nav-links" aria-label={open ? "Close menu" : "Open menu"}>
+            <MenuIcon open={open} />
+          </button>
+        </div>
+      </nav>
+    </header>
+  );
+}
+
+function Ridge({ className, d }) {
+  return (
+    <svg className={"ridge " + className} viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
+}
+
+function Hero() {
+  return (
+    <section className="hero" id="top">
+      <Parallax speed={-0.55} className="layer"><div className="sun-glow"></div><div className="sun"></div></Parallax>
+      <Parallax speed={-0.28} className="layer">
+        <Ridge className="ridge-1" d="M0,160 C180,110 330,190 500,150 C670,110 790,175 960,140 C1130,105 1290,165 1440,118 L1440,320 L0,320 Z" />
+      </Parallax>
+      <Parallax speed={-0.12} className="layer">
+        <Ridge className="ridge-2" d="M0,222 C200,182 370,242 570,206 C770,170 910,236 1110,200 C1260,174 1360,214 1440,194 L1440,320 L0,320 Z" />
+      </Parallax>
+      <div className="layer">
+        <Ridge className="ridge-3" d="M0,272 C240,246 430,292 720,262 C1000,234 1210,286 1440,258 L1440,320 L0,320 Z" />
+      </div>
+
+      <div className="wrap" style={{ position: "relative", zIndex: 3 }}>
+        <Parallax speed={-0.3}>
+          <div className="hero-copy">
+            <p className="hello">Hi, I’m Piyush Jha, GenAI Architect.</p>
+            <h1>I architect cloud platforms and the AI agents that help build them.</h1>
+            <p className="hero-lede">
+              14+ years designing and delivering cloud-native platforms for banking, eCommerce and digital ordering
+              on React, Node.js, GraphQL and AWS. Today I bring Generative AI, MCP and orchestrator-driven agentic
+              workflows into how engineering teams design, review, test and ship.
+            </p>
+            <div className="cta-row">
+              <a className="btn btn-primary" href="#projects">View projects</a>
+              <a className="btn btn-ghost" href="#contact">Contact me</a>
+            </div>
+            <p className="status">Currently at EPAM Systems, architecting for Restaurant Brands International</p>
+          </div>
+        </Parallax>
+      </div>
+    </section>
+  );
+}
+
+function About() {
+  return (
+    <section className="section" id="about">
+      <Parallax speed={0.4} className="layer">
+        <div className="ring" style={{ width: 620, height: 620, right: -220, top: "2%", opacity: .5 }}></div>
+        <div className="ring" style={{ width: 380, height: 380, right: -100, top: "18%", opacity: .35 }}></div>
+      </Parallax>
+      <Parallax speed={-0.25} className="layer">
+        <div className="orb" style={{ width: 340, height: 340, left: "34%", bottom: "-10%", background: "radial-gradient(circle, var(--sun-b), transparent 65%)", opacity: .3 }}></div>
+      </Parallax>
+      <div className="wrap">
+        <Parallax speed={-0.08}><div className="section-head"><h2>About me</h2></div></Parallax>
+        <div className="about-grid">
+          <Parallax speed={0.06} mobileSpeed={0}>
+          <div className="about-text">
+            <p className="lead">I design enterprise-scale, cloud-native platforms and help engineering teams adopt AI without lowering the bar on quality.</p>
+            <p>
+              I started as a full-stack developer in 2012 and have since built and led platforms across banking, retail,
+              eCommerce and food ordering, including Santander’s OpenBank, a 1M-user fashion marketplace and ordering
+              platforms for Burger King, Popeyes and Tim Hortons. Along the way I’ve led teams of up to 15 developers and
+              owned technical strategy and architecture governance.
+            </p>
+            <p>
+              Today I pair that architecture background with hands-on Generative AI: AI agents, MCP-enabled workflows
+              and prompt engineering, coordinated by orchestrators that take on multi-step engineering work across
+              solution design, code reviews, documentation and testing.
+            </p>
+          </div>
+          </Parallax>
+          <Parallax speed={-0.12} mobileSpeed={0}>
+          <aside className="facts" aria-label="At a glance">
+            <dl>
+              <div><dt>Experience</dt><dd><span className="years">14+</span> years</dd></div>
+              <div><dt>Current focus</dt><dd>Agentic workflows, AI orchestration, MCP</dd></div>
+              <div><dt>Core stack</dt><dd>React, TypeScript, Node.js, NestJS, GraphQL, AWS</dd></div>
+              <div><dt>Domains</dt><dd>Banking, retail, eCommerce, food ordering and delivery</dd></div>
+              <div><dt>Education</dt><dd>PG Diploma in Advanced Computing, CDAC-ACTS (2012)<br />B.E. Electronics &amp; Communication, RGPV (2011)</dd></div>
+            </dl>
+          </aside>
+          </Parallax>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Skills() {
+  return (
+    <section className="section alt" id="skills">
+      <Parallax speed={0.45} className="layer">
+        <div className="orb" style={{ width: 560, height: 560, left: -220, top: "4%", background: "radial-gradient(circle, var(--sun-a), transparent 65%)", opacity: .5 }}></div>
+      </Parallax>
+      <Parallax speed={-0.3} className="layer">
+        <div className="orb" style={{ width: 420, height: 420, right: -140, bottom: "-4%", background: "radial-gradient(circle, var(--sun-c), transparent 65%)", opacity: .35 }}></div>
+        <div className="ring" style={{ width: 260, height: 260, right: "6%", top: "8%", opacity: .4 }}></div>
+      </Parallax>
+      <div className="wrap">
+        <Parallax speed={-0.08}>
+          <div className="section-head">
+            <h2>Skills</h2>
+            <p>A full-stack JavaScript foundation with Gen AI architecture on top.</p>
+          </div>
+        </Parallax>
+        <div className="skill-grid">
+          {SKILLS.map((g, idx) => (
+            <Parallax key={g.title} speed={idx % 2 ? -0.1 : 0.06} mobileSpeed={0} className="plx-cell">
+            <div className="skill-group" style={{ "--stop": g.stop }}>
+              <h3>{g.title}</h3>
+              <p>{g.blurb}</p>
+              <ul className="chips">{g.items.map(i => <li key={i}>{i}</li>)}</ul>
+            </div>
+            </Parallax>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Projects() {
+  const [filter, setFilter] = useState("all");
+  const list = PROJECTS.filter(p => filter === "all" || p.cat === filter);
+  const filters = [["all", "All"], ["genai", "Gen AI"], ["fullstack", "Full stack"]];
+  return (
+    <section className="section" id="projects">
+      <Parallax speed={-0.35} className="layer">
+        <div className="slices" style={{ right: "4%", top: "5%", width: 300 }}>
+          <span></span><span style={{ width: "88%" }}></span><span style={{ width: "72%" }}></span><span style={{ width: "54%" }}></span><span style={{ width: "36%" }}></span>
+        </div>
+      </Parallax>
+      <Parallax speed={0.4} className="layer">
+        <div className="ring" style={{ width: 520, height: 520, left: -260, bottom: "4%", opacity: .4 }}></div>
+        <div className="orb" style={{ width: 360, height: 360, left: "40%", top: "30%", background: "radial-gradient(circle, var(--sun-a), transparent 65%)", opacity: .25 }}></div>
+      </Parallax>
+      <div className="wrap">
+        <Parallax speed={-0.08}>
+          <div className="section-head">
+            <h2>Projects</h2>
+            <p>Platforms I’ve architected and led, from online banking to food ordering.</p>
+          </div>
+        </Parallax>
+        <div className="filters" role="group" aria-label="Filter projects">
+          {filters.map(([key, label]) => (
+            <button key={key} className="filter" aria-pressed={filter === key} onClick={() => setFilter(key)}>{label}</button>
+          ))}
+        </div>
+        <div className="project-grid">
+          {list.map((p, i) => {
+            const col = i === 0 ? 0 : i === 1 ? 2 : (i - 2) % 3;
+            return (
+            <Parallax key={p.title} speed={col === 2 ? -0.08 : 0.05} mobileSpeed={0} mobileBelow={980}
+              className={"plx-cell" + (i === 0 ? " featured-cell" : "")}>
+            <article className={"project" + (i === 0 ? " featured" : "")}>
+              <span className="tag">{p.cat === "genai" ? "Gen AI" : "Full stack"}</span>
+              <h3>{p.title}</h3>
+              <p>{p.desc}</p>
+              {p.outcome && <p className="outcome">{p.outcome}</p>}
+              <ul className="chips">{p.stack.map(s => <li key={s}>{s}</li>)}</ul>
+            </article>
+            </Parallax>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Experience() {
+  return (
+    <section className="section alt" id="experience">
+      <Parallax speed={0.4} className="layer">
+        <div className="ring" style={{ width: 540, height: 540, left: -270, bottom: "4%", opacity: .45 }}></div>
+      </Parallax>
+      <Parallax speed={-0.3} className="layer">
+        <div className="orb" style={{ width: 460, height: 460, right: -180, top: "6%", background: "radial-gradient(circle, var(--dusk), transparent 65%)", opacity: .3 }}></div>
+        <div className="slices" style={{ right: "5%", bottom: "8%", width: 200 }}>
+          <span></span><span style={{ width: "75%" }}></span><span style={{ width: "50%" }}></span>
+        </div>
+      </Parallax>
+      <div className="wrap">
+        <Parallax speed={-0.08}>
+          <div className="section-head">
+            <h2>Experience</h2>
+            <p>From full-stack developer in 2012 to GenAI architect today.</p>
+          </div>
+        </Parallax>
+        <ol className="timeline">
+          {JOBS.map(j => (
+            <li className="job" key={j.years}>
+              <Parallax speed={-0.06} mobileSpeed={0} mobileBelow={720}><div className="job-years">{j.years}</div></Parallax>
+              <div className="job-body">
+                <h3>{j.role}</h3>
+                <div className="job-company">{j.company}</div>
+                <ul>{j.points.map(p => <li key={p}>{p}</li>)}</ul>
+                <ul className="chips">{j.stack.map(s => <li key={s}>{s}</li>)}</ul>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+function Contact() {
+  const EMAIL = "piyushjha04@gmail.com";
+  const [sent, setSent] = useState(false);
+  const onSubmit = e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const subject = encodeURIComponent("Project enquiry from " + f.get("name"));
+    const body = encodeURIComponent(f.get("message") + "\n\n" + f.get("name") + " (" + f.get("email") + ")");
+    setSent(true);
+    window.location.href = `mailto:${EMAIL}?subject=${subject}&body=${body}`;
+  };
+  return (
+    <section className="section contact" id="contact">
+      <Parallax speed={-0.3} className="layer">
+        <div className="ring" style={{ width: 480, height: 480, right: -200, top: "4%", opacity: .4 }}></div>
+        <div className="orb" style={{ width: 380, height: 380, left: -160, top: "20%", background: "radial-gradient(circle, var(--sun-a), transparent 65%)", opacity: .35 }}></div>
+      </Parallax>
+      <Parallax speed={0.45} className="layer"><div className="sun"></div></Parallax>
+      <div className="layer">
+        <Ridge className="" d="M0,190 C220,150 420,220 720,180 C1010,142 1220,212 1440,170 L1440,320 L0,320 Z" />
+      </div>
+      <div className="wrap">
+        <div className="contact-grid">
+          <Parallax speed={-0.08} mobileSpeed={0}>
+            <div className="section-head" style={{ marginBottom: 0 }}>
+              <h2>Let’s build something useful</h2>
+              <p>Bringing AI agents into your engineering workflow, scaling a cloud-native platform or need an architecture review? Tell me what you’re working on.</p>
+            </div>
+            <div className="contact-links">
+              <a href={"mailto:" + EMAIL}>{EMAIL}</a>
+              <a href="tel:+919112277025">+91 91122 77025</a>
+              <span>Hyderabad, India</span>
+            </div>
+          </Parallax>
+          <Parallax speed={0.1} mobileSpeed={0}>
+          <form onSubmit={onSubmit}>
+            <label>Name<input name="name" required autoComplete="name" /></label>
+            <label>Email<input name="email" type="email" required autoComplete="email" /></label>
+            <label>Message<textarea name="message" required placeholder="A few lines about your project and timeline"></textarea></label>
+            <button className="btn btn-primary" type="submit" style={{ justifySelf: "start" }}>Send message</button>
+            <p className={"form-note" + (sent ? " ok" : "")} aria-live="polite">
+              {sent ? `Your email app should open with the message ready. If it doesn’t, write to ${EMAIL}.`
+                    : "Your message goes straight to my inbox."}
+            </p>
+          </form>
+          </Parallax>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function App() {
+  const [theme, toggleTheme] = useTheme();
+  return (
+    <>
+      <Header theme={theme} toggleTheme={toggleTheme} />
+      <main>
+        <Hero />
+        <About />
+        <Skills />
+        <Projects />
+        <Experience />
+        <Contact />
+      </main>
+      <footer>
+        <div className="wrap">
+          <span>© 2026 Piyush Jha</span>
+          <a href="#top">Back to top</a>
+        </div>
+      </footer>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
